@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel | Jay Ananth</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script defer src="script.js"></script>
+    <style>
+        .travel-map-container {
+            background: white;
+            border: 1px solid var(--line-soft);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .travel-map-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(34,211,238,0.3), rgba(167,139,250,0.3));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 1;
+        }
+        #travel-map {
+            width: 100%;
+            height: 600px;
+            border-radius: 12px;
+            z-index: 1;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .favorites-section {
+            margin-top: 3rem;
+        }
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .favorite-card {
+            background: white;
+            border: 1px solid var(--line-soft);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .favorite-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--line-soft);
+        }
+        .highlights-section {
+            margin-top: 1.25rem;
+        }
+        .highlights-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+        .highlights-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .highlights-list li {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 1rem;
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        .highlights-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent-purple);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .favorite-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+        }
+        .favorite-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(167,139,250,0.5);
+        }
+        .favorite-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(34,211,238,0.15) 0%, rgba(167,139,250,0.15) 100%);
+            color: var(--accent-purple);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(167,139,250,0.35);
+        }
+        .favorite-badge .star {
+            color: #fbbf24;
+            font-size: 1rem;
+        }
+        .favorite-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .favorite-location {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .favorite-description {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+        .places-section {
+            margin-top: 4rem;
+        }
+        .places-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .place-card {
+            background: white;
+            border: 1px solid var(--line-soft);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+        .place-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(167,139,250,0.35);
+        }
+        .place-country {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(34,211,238,0.12) 0%, rgba(167,139,250,0.12) 100%);
+            color: var(--accent-purple);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(167,139,250,0.35);
+        }
+        .places-list {
+            list-style: none;
+            padding: 0;
+            margin: 0.75rem 0 0 0;
+        }
+        .places-list li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--line-soft);
+            font-size: 0.9rem;
+        }
+        .places-list li:last-child {
+            border-bottom: none;
+        }
+        .places-list li::before {
+            content: "📍 ";
+            margin-right: 0.5rem;
+        }
+        /* Custom marker styles - remove default Leaflet marker styling */
+        .custom-marker {
+            background: transparent !important;
+            border: none !important;
+        }
+        @media (max-width: 768px) {
+            #travel-map {
+                height: 400px;
+            }
+            .favorites-grid,
+            .places-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Jay Ananth</a>
+            <ul class="nav-menu">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="experience.html">Experience</a></li>
+                <li><a href="travel.html">Travel</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-hero">
+        <div class="container">
+            <div>
+                <h1 class="page-title">Travel</h1>
+                <p class="page-subtitle">Places I've explored and memories I've made around the world.</p>
+            </div>
+            <a class="back-link" href="index.html">← Back to Home</a>
+        </div>
+    </header>
+
+    <main class="section section-alt">
+        <div class="container">
+            <!-- Interactive Map -->
+            <div class="travel-map-container">
+                <h2 style="margin-bottom: 1rem; font-size: 1.5rem; color: var(--text-primary);">Jay's Travel Map</h2>
+                <div id="travel-map"></div>
+            </div>
+
+            <!-- Top 3 Favorites -->
+            <div class="favorites-section">
+                <h2 class="section-title">Top 3 Favorite Places</h2>
+                <div class="favorites-grid">
+                    <!-- Yosemite -->
+                    <div class="favorite-card">
+                        <span class="favorite-badge"><span class="star">⭐</span> Top Favorite</span>
+                        <h3 class="favorite-name">Yosemite Park</h3>
+                        <div class="favorite-location">🇺🇸 Yosemite, California, United States</div>
+                        <div class="highlights-section">
+                            <div class="highlights-title">Highlights</div>
+                            <ul class="highlights-list">
+                                <li>Highlight 1</li>
+                                <li>Highlight 2</li>
+                                <li>Highlight 3</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Kauai -->
+                    <div class="favorite-card">
+                        <span class="favorite-badge"><span class="star">⭐</span> Top Favorite</span>
+                        <h3 class="favorite-name">Kauai</h3>
+                        <div class="favorite-location">🇺🇸 Kauai, Hawaii, United States</div>
+                        <div class="highlights-section">
+                            <div class="highlights-title">Highlights</div>
+                            <ul class="highlights-list">
+                                <li>Highlight 1</li>
+                                <li>Highlight 2</li>
+                                <li>Highlight 3</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Banff -->
+                    <div class="favorite-card">
+                        <span class="favorite-badge"><span class="star">⭐</span> Top Favorite</span>
+                        <h3 class="favorite-name">Banff</h3>
+                        <div class="favorite-location">🇨🇦 Banff, Alberta, Canada</div>
+                        <div class="highlights-section">
+                            <div class="highlights-title">Highlights</div>
+                            <ul class="highlights-list">
+                                <li>Highlight 1</li>
+                                <li>Highlight 2</li>
+                                <li>Highlight 3</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Places List -->
+            <div class="places-section">
+                <h2 class="section-title">All Places Visited</h2>
+                <div class="places-grid">
+                    <!-- USA -->
+                    <div class="place-card">
+                        <span class="place-country">🇺🇸 United States</span>
+                        <ul class="places-list">
+                            <li>Los Angeles, California</li>
+                            <li>San Diego, California</li>
+                            <li>San Francisco, California</li>
+                            <li>Seattle, Washington</li>
+                            <li>Washington D.C.</li>
+                            <li>New York City, New York</li>
+                            <li>Dallas, Texas</li>
+                            <li>Houston, Texas</li>
+                            <li>Las Vegas, Nevada</li>
+                            <li>Albuquerque, New Mexico</li>
+                            <li>Denver, Colorado</li>
+                            <li>Chicago, Illinois</li>
+                            <li>Grand Canyon, Arizona</li>
+                            <li>Yosemite National Park, California</li>
+                            <li>Miami, Florida</li>
+                            <li>Orlando, Florida</li>
+                            <li>Pittsburgh, Pennsylvania</li>
+                            <li>Philadelphia, Pennsylvania</li>
+                            <li>Delaware</li>
+                            <li>Maryland</li>
+                            <li>New Jersey</li>
+                            <li>Boston, Massachusetts</li>
+                            <li>Providence, Rhode Island</li>
+                            <li>New Haven, Connecticut</li>
+                            <li>Niagara Falls (US Side)</li>
+                            <li>Alaska</li>
+                            <li>Maui, Hawaii</li>
+                            <li>Kauai, Hawaii</li>
+                            <li>O'ahu, Hawaii</li>
+                            <li>Big Island, Hawaii</li>
+                        </ul>
+                    </div>
+
+                    <!-- Canada -->
+                    <div class="place-card">
+                        <span class="place-country">🇨🇦 Canada</span>
+                        <ul class="places-list">
+                            <li>Toronto, Ontario</li>
+                            <li>Victoria, British Columbia</li>
+                            <li>Banff, Alberta</li>
+                            <li>Jasper, Alberta</li>
+                            <li>Niagara Falls (Canada Side)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Mexico -->
+                    <div class="place-card">
+                        <span class="place-country">🇲🇽 Mexico</span>
+                        <ul class="places-list">
+                            <li>Puerto Vallarta</li>
+                            <li>Cabo San Lucas</li>
+                        </ul>
+                    </div>
+
+                    <!-- Peru -->
+                    <div class="place-card">
+                        <span class="place-country">🇵🇪 Peru</span>
+                        <ul class="places-list">
+                            <li>Machu Picchu</li>
+                            <li>Lima</li>
+                        </ul>
+                    </div>
+
+                    <!-- Europe -->
+                    <div class="place-card">
+                        <span class="place-country">🇪🇺 Europe</span>
+                        <ul class="places-list">
+                            <li>United Kingdom</li>
+                            <li>Germany</li>
+                            <li>Switzerland</li>
+                            <li>Italy</li>
+                            <li>France</li>
+                            <li>Amsterdam, Netherlands</li>
+                        </ul>
+                    </div>
+
+                    <!-- Asia -->
+                    <div class="place-card">
+                        <span class="place-country">🇮🇳 Asia</span>
+                        <ul class="places-list">
+                            <li>India</li>
+                        </ul>
+                    </div>
+
+                    <!-- Australia -->
+                    <div class="place-card">
+                        <span class="place-country">🇦🇺 Australia</span>
+                        <ul class="places-list">
+                            <li>Sydney, New South Wales</li>
+                            <li>Melbourne, Victoria</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Jay Ananth. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map with better styling
+        const map = L.map('travel-map').setView([30, 0], 2);
+
+        // Use CartoDB Positron for a cleaner, more modern look
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Define locations with coordinates
+        const locations = {
+            // USA
+            'Los Angeles': [34.0522, -118.2437],
+            'San Diego': [32.7157, -117.1611],
+            'San Francisco': [37.7749, -122.4194],
+            'Seattle': [47.6062, -122.3321],
+            'Washington D.C.': [38.9072, -77.0369],
+            'New York City': [40.7128, -74.0060],
+            'Dallas': [32.7767, -96.7970],
+            'Houston': [29.7604, -95.3698],
+            'Las Vegas': [36.1699, -115.1398],
+            'Albuquerque': [35.0844, -106.6504],
+            'Denver': [39.7392, -104.9903],
+            'Chicago': [41.8781, -87.6298],
+            'Grand Canyon': [36.1069, -112.1129],
+            'Yosemite National Park': [37.8651, -119.5383],
+            'Miami': [25.7617, -80.1918],
+            'Orlando': [28.5383, -81.3792],
+            'Pittsburgh': [40.4406, -79.9959],
+            'Philadelphia': [39.9526, -75.1652],
+            'Delaware': [39.1619, -75.5267],
+            'Maryland': [39.0458, -76.6413],
+            'New Jersey': [40.2989, -74.5210],
+            'Boston': [42.3601, -71.0589],
+            'Providence': [41.8240, -71.4128],
+            'New Haven': [41.3083, -72.9279],
+            'Niagara Falls US': [43.0962, -79.0377],
+            'Alaska': [64.2008, -149.4937],
+            
+            // Hawaii
+            'Maui': [20.7984, -156.3319],
+            'Kauai': [22.0964, -159.5261],
+            'O\'ahu': [21.4734, -157.9650],
+            'Big Island': [19.8968, -155.5828],
+            
+            // Canada
+            'Toronto': [43.6532, -79.3832],
+            'Victoria': [48.4284, -123.3656],
+            'Banff': [51.1784, -115.5708],
+            'Jasper': [52.8737, -118.0814],
+            'Niagara Falls Canada': [43.0962, -79.0377],
+            
+            // Mexico
+            'Puerto Vallarta': [20.6597, -105.2300],
+            'Cabo San Lucas': [22.8905, -109.9167],
+            
+            // Peru
+            'Machu Picchu': [-13.1631, -72.5450],
+            'Lima': [-12.0464, -77.0428],
+            
+            // Europe - using capital cities as approximations
+            'United Kingdom': [51.5074, -0.1278], // London
+            'Germany': [52.5200, 13.4050], // Berlin
+            'Switzerland': [46.2044, 6.1432], // Geneva
+            'Italy': [41.9028, 12.4964], // Rome
+            'France': [48.8566, 2.3522], // Paris
+            'Amsterdam': [52.3676, 4.9041], // Amsterdam, Netherlands
+            
+            // Asia
+            'India': [28.6139, 77.2090], // New Delhi
+            
+            // Australia
+            'Sydney': [-33.8688, 151.2093],
+            'Melbourne': [-37.8136, 144.9631]
+        };
+
+        // Create custom icon for regular markers
+        const createCustomIcon = (isFavorite = false) => {
+            const size = isFavorite ? 24 : 20;
+            const color1 = isFavorite ? '#fbbf24' : '#22d3ee';
+            const color2 = isFavorite ? '#f59e0b' : '#a78bfa';
+            const shadowColor = isFavorite ? 'rgba(251,191,36,0.4)' : 'rgba(34,211,238,0.2)';
+            
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: linear-gradient(135deg, ${color1}, ${color2});
+                    border: 3px solid white;
+                    border-radius: 50%;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 0 4px ${shadowColor};
+                "></div>`,
+                iconSize: [size, size],
+                iconAnchor: [size/2, size/2],
+                popupAnchor: [0, -size/2]
+            });
+        };
+
+        // Define favorite locations
+        const favorites = ['Yosemite National Park', 'Kauai', 'Banff'];
+
+        // Add markers for each location with custom styling
+        Object.entries(locations).forEach(([name, coords]) => {
+            const isFavorite = favorites.includes(name);
+            L.marker(coords, {
+                icon: createCustomIcon(isFavorite)
+            })
+                .addTo(map)
+                .bindPopup(`<strong>${name}</strong>${isFavorite ? ' ⭐' : ''}`);
+        });
+    </script>
+</body>
+</html>
+
