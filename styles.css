@@ -358,6 +358,57 @@ body {
     color: var(--primary-color);
 }
 
+.miran-btn {
+    background: linear-gradient(135deg, rgba(34,211,238,0.15) 0%, rgba(167,139,250,0.15) 100%);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.4);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.miran-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(34,211,238,0.3) 0%, rgba(167,139,250,0.3) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.miran-btn:hover::before {
+    opacity: 1;
+}
+
+.miran-btn:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255,255,255,0.6);
+    box-shadow: 0 0 0 2px rgba(34,211,238,0.4) inset, 0 12px 32px rgba(167,139,250,0.3), var(--glow-cyan);
+}
+
+.miran-btn span,
+.miran-btn {
+    position: relative;
+    z-index: 1;
+}
+
+/* Miran button on light backgrounds (experience page) */
+.section-alt .miran-btn,
+.exp-body .miran-btn {
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 16px rgba(34,211,238,0.3), 0 0 0 2px rgba(167,139,250,0.2) inset;
+}
+
+.section-alt .miran-btn:hover,
+.exp-body .miran-btn:hover {
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+    box-shadow: 0 6px 24px rgba(34,211,238,0.4), 0 0 0 2px rgba(167,139,250,0.3) inset, var(--glow-cyan);
+    transform: translateY(-3px);
+}
+
 /* Sections */
 .section {
     padding: 5rem 0;
